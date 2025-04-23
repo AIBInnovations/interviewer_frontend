@@ -807,7 +807,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInterview } from '../context/InterviewContext';
 
-const API_BASE_URL = 'http://127.0.0.1:8080';
+const API_BASE_URL = 'https://interview-backend-wyzg.onrender.com';
 
 export default function Interview() {
   const {

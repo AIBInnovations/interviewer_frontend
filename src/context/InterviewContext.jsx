@@ -2,7 +2,7 @@
 // import { createContext, useState, useContext } from 'react';
 
 // const InterviewContext = createContext();
-// const API_BASE_URL = 'http://127.0.0.1:8080';
+// const API_BASE_URL = 'https://interview-backend-wyzg.onrender.com';
 
 // export function useInterview() {
 //   return useContext(InterviewContext);
@@ -162,7 +162,7 @@
 // } from 'react';
 
 // const InterviewContext = createContext();
-// const API_BASE_URL = 'http://127.0.0.1:8080';
+// const API_BASE_URL = 'https://interview-backend-wyzg.onrender.com';
 
 // export function useInterview() {
 //   return useContext(InterviewContext);
@@ -361,7 +361,7 @@ import React, {
 } from 'react';
 
 const InterviewContext = createContext();
-const API_BASE_URL = 'http://127.0.0.1:8080';
+const API_BASE_URL = 'https://interview-backend-wyzg.onrender.com';
 
 export function useInterview() {
   return useContext(InterviewContext);
