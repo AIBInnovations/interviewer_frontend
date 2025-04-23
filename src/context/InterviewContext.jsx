@@ -1,5 +1,161 @@
-// context/InterviewContext.jsx
-import { createContext, useState, useContext } from 'react';
+// // context/InterviewContext.jsx
+// import { createContext, useState, useContext } from 'react';
+
+// const InterviewContext = createContext();
+// const API_BASE_URL = 'http://127.0.0.1:8080';
+
+// export function useInterview() {
+//   return useContext(InterviewContext);
+// }
+
+// export function InterviewProvider({ children }) {
+//   const [jobTitle, setJobTitle] = useState('');
+//   const [interviewHistory, setInterviewHistory] = useState([]);
+//   const [currentQuestion, setCurrentQuestion] = useState('');
+//   const [assessment, setAssessment] = useState(null);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [error, setError] = useState(null);
+//   const [interviewComplete, setInterviewComplete] = useState(false);
+//   const [currentQuestionNumber, setCurrentQuestionNumber] = useState(0);
+  
+//   // Start a new interview
+//   const startInterview = async (title) => {
+//     setIsLoading(true);
+//     setError(null);
+//     setJobTitle(title);
+//     setInterviewHistory([]);
+//     setAssessment(null);
+//     setInterviewComplete(false);
+//     setCurrentQuestionNumber(1);
+    
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/start`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({ job_title: title }),
+//       });
+      
+//       if (!response.ok) {
+//         throw new Error('Failed to start interview');
+//       }
+      
+//       const data = await response.json();
+//       setCurrentQuestion(data.question);
+//       setIsLoading(false);
+//     } catch (err) {
+//       setError(err.message);
+//       setIsLoading(false);
+//     }
+//   };
+  
+//   // Submit an answer and get the next question
+//   const submitAnswer = async (answer) => {
+//     if (isLoading) return;
+    
+//     setIsLoading(true);
+//     setError(null);
+    
+//     // Add current Q&A to history
+//     const updatedHistory = [
+//       ...interviewHistory,
+//       { question: currentQuestion, answer }
+//     ];
+//     setInterviewHistory(updatedHistory);
+    
+//     // If we've reached the end of the interview
+//     if (currentQuestionNumber >= 5) {
+//       await evaluateInterview(updatedHistory);
+//       return;
+//     }
+    
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/question`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           job_title: jobTitle,
+//           history: updatedHistory,
+//           qnum: currentQuestionNumber + 1
+//         }),
+//       });
+      
+//       if (!response.ok) {
+//         throw new Error('Failed to get next question');
+//       }
+      
+//       const data = await response.json();
+//       setCurrentQuestion(data.question);
+//       setCurrentQuestionNumber(prev => prev + 1);
+//       setIsLoading(false);
+//     } catch (err) {
+//       setError(err.message);
+//       setIsLoading(false);
+//     }
+//   };
+  
+//   // Evaluate the interview
+//   const evaluateInterview = async (history) => {
+//     setIsLoading(true);
+//     setError(null);
+    
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/evaluate`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           job_title: jobTitle,
+//           history: history || interviewHistory,
+//         }),
+//       });
+      
+//       if (!response.ok) {
+//         throw new Error('Failed to evaluate interview');
+//       }
+      
+//       const data = await response.json();
+//       setAssessment(data.assessment);
+//       setInterviewComplete(true);
+//       setIsLoading(false);
+//     } catch (err) {
+//       setError(err.message);
+//       setIsLoading(false);
+//     }
+//   };
+  
+//   const value = {
+//     jobTitle,
+//     interviewHistory,
+//     currentQuestion,
+//     assessment,
+//     isLoading,
+//     error,
+//     interviewComplete,
+//     currentQuestionNumber,
+//     startInterview,
+//     submitAnswer,
+//     evaluateInterview,
+//   };
+  
+//   return (
+//     <InterviewContext.Provider value={value}>
+//       {children}
+//     </InterviewContext.Provider>
+//   );
+// }
+
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useRef
+} from 'react';
 
 const InterviewContext = createContext();
 const API_BASE_URL = 'http://127.0.0.1:8080';
@@ -9,16 +165,86 @@ export function useInterview() {
 }
 
 export function InterviewProvider({ children }) {
-  const [jobTitle, setJobTitle] = useState('');
+  // Q&A state
+  const [jobTitle, setJobTitle]                 = useState('');
   const [interviewHistory, setInterviewHistory] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState('');
-  const [assessment, setAssessment] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [currentQuestion, setCurrentQuestion]   = useState('');
+  const [assessment, setAssessment]             = useState(null);
+  const [isLoading, setIsLoading]               = useState(false);
+  const [error, setError]                       = useState(null);
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [currentQuestionNumber, setCurrentQuestionNumber] = useState(0);
-  
-  // Start a new interview
+
+  // Proctor state
+  const [warnings, setWarnings]           = useState(0);
+  const [lastReason, setLastReason]       = useState('');
+  const [testStopped, setTestStopped]     = useState(false);
+  const [proctorSession, setProctorSession] = useState(null);
+
+  // keep track so we only play sound when warnings increments
+  const prevWarningsRef = useRef(0);
+
+  // 1) Fire up proctor
+  const startProctor = async () => {
+    const res  = await fetch(`${API_BASE_URL}/start_proctor`, { method:'POST' });
+    const json = await res.json();
+    setProctorSession(json.sessionId);
+    return json.sessionId;
+  };
+
+  // 2) Poll proctor status every second
+  useEffect(() => {
+    if (!proctorSession) return;
+    const iv = setInterval(async () => {
+      const s = await fetch(
+        `${API_BASE_URL}/status_proctor?sessionId=${proctorSession}`
+      ).then(r => r.json());
+      setWarnings(s.warnings);
+      setLastReason(s.reason);
+      setTestStopped(s.stopped);
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [proctorSession]);
+
+  // 3) Play beep + TTS when a new warning arrives
+  useEffect(() => {
+    if (warnings > prevWarningsRef.current) {
+      // beep
+      const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+      osc.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+      // TTS
+      const u = new SpeechSynthesisUtterance(`Warning: ${lastReason}`);
+      speechSynthesis.speak(u);
+    }
+    prevWarningsRef.current = warnings;
+  }, [warnings, lastReason]);
+
+  // 4) Listen for blur/visibility and log to server
+  useEffect(() => {
+    if (!proctorSession) return;
+    const sendLog = async (event) => {
+      await fetch(`${API_BASE_URL}/log_event`, {
+        method:'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ event })
+      });
+    };
+    const onBlur = () => sendLog('blur');
+    const onVis  = () => { if (document.hidden) sendLog('visibility_hidden'); };
+
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [proctorSession]);
+
+  // 5) Start Interview = Q&A + Proctor
   const startInterview = async (title) => {
     setIsLoading(true);
     setError(null);
@@ -27,123 +253,95 @@ export function InterviewProvider({ children }) {
     setAssessment(null);
     setInterviewComplete(false);
     setCurrentQuestionNumber(1);
-    
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ job_title: title }),
+      // Q&A
+      const resp = await fetch(`${API_BASE_URL}/api/start`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ job_title: title })
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to start interview');
-      }
-      
-      const data = await response.json();
+      if (!resp.ok) throw new Error('Failed to start interview');
+      const data = await resp.json();
       setCurrentQuestion(data.question);
+
+      // Proctor
+      await startProctor();
+
       setIsLoading(false);
     } catch (err) {
       setError(err.message);
       setIsLoading(false);
     }
   };
-  
-  // Submit an answer and get the next question
+
+  // 6) Submit answer → next question or evaluate
   const submitAnswer = async (answer) => {
     if (isLoading) return;
-    
     setIsLoading(true);
     setError(null);
-    
-    // Add current Q&A to history
+
     const updatedHistory = [
       ...interviewHistory,
       { question: currentQuestion, answer }
     ];
     setInterviewHistory(updatedHistory);
-    
-    // If we've reached the end of the interview
+
     if (currentQuestionNumber >= 5) {
-      await evaluateInterview(updatedHistory);
+      // final
+      const resp = await fetch(`${API_BASE_URL}/api/evaluate`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          job_title: jobTitle,
+          history: updatedHistory
+        })
+      });
+      if (!resp.ok) throw new Error('Failed to evaluate');
+      const { assessment } = await resp.json();
+      setAssessment(assessment);
+      setInterviewComplete(true);
+      setIsLoading(false);
       return;
     }
-    
+
+    // else next question
     try {
-      const response = await fetch(`${API_BASE_URL}/api/question`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const resp = await fetch(`${API_BASE_URL}/api/question`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           job_title: jobTitle,
           history: updatedHistory,
           qnum: currentQuestionNumber + 1
-        }),
+        })
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to get next question');
-      }
-      
-      const data = await response.json();
-      setCurrentQuestion(data.question);
-      setCurrentQuestionNumber(prev => prev + 1);
+      if (!resp.ok) throw new Error('Failed to get next question');
+      const { question } = await resp.json();
+      setCurrentQuestion(question);
+      setCurrentQuestionNumber(n => n + 1);
       setIsLoading(false);
     } catch (err) {
       setError(err.message);
       setIsLoading(false);
     }
   };
-  
-  // Evaluate the interview
-  const evaluateInterview = async (history) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/evaluate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          job_title: jobTitle,
-          history: history || interviewHistory,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to evaluate interview');
-      }
-      
-      const data = await response.json();
-      setAssessment(data.assessment);
-      setInterviewComplete(true);
-      setIsLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setIsLoading(false);
-    }
-  };
-  
-  const value = {
-    jobTitle,
-    interviewHistory,
-    currentQuestion,
-    assessment,
-    isLoading,
-    error,
-    interviewComplete,
-    currentQuestionNumber,
-    startInterview,
-    submitAnswer,
-    evaluateInterview,
-  };
-  
+
   return (
-    <InterviewContext.Provider value={value}>
+    <InterviewContext.Provider value={{
+      jobTitle,
+      currentQuestion,
+      currentQuestionNumber,
+      interviewHistory,
+      assessment,
+      isLoading,
+      error,
+      interviewComplete,
+      warnings,
+      testStopped,
+      startInterview,
+      submitAnswer
+    }}>
       {children}
     </InterviewContext.Provider>
   );
