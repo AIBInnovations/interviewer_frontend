@@ -575,239 +575,9 @@
 
 // With the Warning Banner
 
-// import React, { useState, useEffect, useRef } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { useInterview } from '../context/InterviewContext';
-
-// export default function Interview() {
-//   const {
-//     jobTitle,
-//     currentQuestion,
-//     currentQuestionNumber,
-//     isLoading,
-//     interviewComplete,
-//     submitAnswer,
-//     error,
-//     warnings,
-//     lastReason,
-//     testStopped,
-//     visualAlert
-//   } = useInterview();
-
-//   const [answer, setAnswer]           = useState('');
-//   const [isRecording, setIsRecording] = useState(false);
-//   const [timeLeft, setTimeLeft]       = useState(60);
-//   const [isMicAvailable, setIsMicAvailable] = useState(null);
-//   const [isReading, setIsReading]     = useState(false);
-
-//   const navigate       = useNavigate();
-//   const timerRef       = useRef(null);
-//   const speechRef      = useRef(null);
-//   const recognitionRef = useRef(null);
-
-//   // Redirect & mic-check
-//   useEffect(() => {
-//     if (!jobTitle) navigate('/');
-//     if (interviewComplete) navigate('/results');
-
-//     if (navigator.mediaDevices?.getUserMedia) {
-//       navigator.mediaDevices.getUserMedia({ audio: true })
-//         .then(() => setIsMicAvailable(true))
-//         .catch(() => setIsMicAvailable(false));
-//     } else {
-//       setIsMicAvailable(false);
-//     }
-
-//     speechRef.current = window.speechSynthesis;
-//     return () => {
-//       speechRef.current?.speaking && speechRef.current.cancel();
-//       recognitionRef.current?.stop();
-//     };
-//   }, [jobTitle, interviewComplete, navigate]);
-
-//   // Read question aloud
-//   useEffect(() => {
-//     if (currentQuestion && !isLoading) {
-//       const utter = new SpeechSynthesisUtterance(currentQuestion);
-//       utter.rate = 1.0; utter.pitch = 1.0;
-//       utter.onstart = () => setIsReading(true);
-//       utter.onend   = () => setIsReading(false);
-//       utter.onerror = () => setIsReading(false);
-//       speechRef.current.speak(utter);
-//     }
-//   }, [currentQuestion, isLoading]);
-
-//   // Recording timer
-//   useEffect(() => {
-//     if (isRecording && timeLeft > 0) {
-//       timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000);
-//     } else if (isRecording && timeLeft === 0) {
-//       setIsRecording(false);
-//       recognitionRef.current?.stop();
-//     }
-//     return () => clearTimeout(timerRef.current);
-//   }, [isRecording, timeLeft]);
-
-//   // Full-screen stop overlay
-//   if (testStopped) {
-//     return (
-//       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
-//         <h2 className="text-3xl font-bold text-red-600">
-//           Test stopped after 5 warnings
-//         </h2>
-//       </div>
-//     );
-//   }
-
-//   // Loading state
-//   if (isLoading || !currentQuestion) {
-//     return (
-//       <div className="flex flex-col items-center justify-center h-64">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-//         <p className="text-lg text-gray-600">Preparing your interview...</p>
-//       </div>
-//     );
-//   }
-
-//   // Recording handlers
-//   const handleStartRecording = () => {
-//     setIsRecording(true);
-//     setTimeLeft(60);
-//     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-//     if (!SpeechRec) return console.error('SpeechRecognition not supported');
-
-//     recognitionRef.current = new SpeechRec();
-//     recognitionRef.current.continuous = true;
-//     recognitionRef.current.interimResults = true;
-
-//     recognitionRef.current.onresult = (e) => {
-//       let interim = '', final = '';
-//       for (let i = e.resultIndex; i < e.results.length; i++) {
-//         const t = e.results[i][0].transcript;
-//         if (e.results[i].isFinal) final += t;
-//         else interim += t;
-//       }
-//       const txt = final || interim;
-//       setAnswer(txt);
-//     };
-//     recognitionRef.current.onend = () => {
-//       isRecording && recognitionRef.current.start();
-//     };
-//     recognitionRef.current.start();
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     if (!answer.trim()) return;
-//     submitAnswer(answer);
-//     setAnswer('');
-//   };
-
-//   // Format mm:ss
-//   const formatTime = (secs) => {
-//     const m = Math.floor(secs / 60), s = secs % 60;
-//     return `${m}:${s < 10 ? '0' : ''}${s}`;
-//   };
-
-//   return (
-//     <>
-//       {/* Visual banner alert */}
-//       {visualAlert && (
-//         <div className="fixed top-4 left-1/2 transform -translate-x-1/2
-//                         bg-red-600 text-white px-4 py-2 rounded shadow-lg
-//                         z-50 animate-pulse">
-//           Warning: {visualAlert}
-//         </div>
-//       )}
-
-//       <div className="max-w-4xl mx-auto space-y-6">
-//         {/* Header */}
-//         <div className="flex justify-between items-center">
-//           <h1 className="text-2xl font-bold">{jobTitle} Interview</h1>
-//           <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
-//             Q {currentQuestionNumber} of 5
-//           </span>
-//         </div>
-
-//         {/* Question Box */}
-//         <div className="bg-indigo-50 p-6 rounded-lg relative">
-//           <div className="absolute top-4 left-4 bg-indigo-600 text-white p-1 rounded-full">
-//             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-//               <path fillRule="evenodd"
-//                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-//                 clipRule="evenodd"
-//               />
-//             </svg>
-//           </div>
-//           <div className="ml-8">
-//             <p className="text-lg font-medium">{currentQuestion}</p>
-//             <button
-//               onClick={() => speechRef.current?.speak(new SpeechSynthesisUtterance(currentQuestion))}
-//               disabled={isReading}
-//               className="mt-2 text-sm flex items-center text-indigo-600 hover:text-indigo-800"
-//             >
-//               {isReading ? 'Speaking…' : 'Read Aloud'}
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Answer Form */}
-//         <form onSubmit={handleSubmit} className="space-y-4">
-//           <textarea
-//             rows={4}
-//             className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500"
-//             placeholder="Type your answer or use the mic…"
-//             value={answer}
-//             onChange={e => setAnswer(e.target.value)}
-//             disabled={isLoading}
-//           />
-
-//           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-//             <div className="flex items-center space-x-4">
-//               {isMicAvailable && (
-//                 <button
-//                   type="button"
-//                   onClick={() => setIsRecording(!isRecording) || (isRecording ? recognitionRef.current?.stop() : handleStartRecording())}
-//                   disabled={isLoading}
-//                   className={`px-4 py-2 rounded-lg ${
-//                     isRecording ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800'
-//                   }`}
-//                 >
-//                   {isRecording ? `Stop (${formatTime(timeLeft)})` : 'Record'}
-//                 </button>
-//               )}
-//               {isMicAvailable === false && (
-//                 <p className="text-sm text-red-600">Microphone access required</p>
-//               )}
-//             </div>
-
-//             <button
-//               type="submit"
-//               disabled={isLoading || !answer.trim()}
-//               className="bg-indigo-600 text-white py-2 px-6 rounded-lg disabled:opacity-50"
-//             >
-//               {isLoading ? 'Processing…' : 'Submit Answer'}
-//             </button>
-//           </div>
-
-//           {error && <p className="text-red-600">{error}</p>}
-//         </form>
-
-//         {/* Warnings Counter */}
-//         <p className="text-red-600 font-semibold">
-//           Warnings: {warnings} / 5
-//         </p>
-//       </div>
-//     </>
-//   );
-// }
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInterview } from '../context/InterviewContext';
-
-const API_BASE_URL = 'https://interview-backend-wyzg.onrender.com';
 
 export default function Interview() {
   const {
@@ -820,26 +590,22 @@ export default function Interview() {
     error,
     warnings,
     lastReason,
-    testStopped
+    testStopped,
+    visualAlert
   } = useInterview();
 
-  // Local UI state
   const [answer, setAnswer]           = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [timeLeft, setTimeLeft]       = useState(60);
   const [isMicAvailable, setIsMicAvailable] = useState(null);
   const [isReading, setIsReading]     = useState(false);
-  const [toast, setToast]             = useState('');
-  const prevWarnRef                   = useRef(0);
-  const toastTimeoutRef               = useRef(null);
 
-  // Refs
   const navigate       = useNavigate();
-  const speechRef      = useRef(window.speechSynthesis);
-  const recognitionRef = useRef(null);
   const timerRef       = useRef(null);
+  const speechRef      = useRef(null);
+  const recognitionRef = useRef(null);
 
-  // Redirect & mic‐check
+  // Redirect & mic-check
   useEffect(() => {
     if (!jobTitle) navigate('/');
     if (interviewComplete) navigate('/results');
@@ -852,23 +618,22 @@ export default function Interview() {
       setIsMicAvailable(false);
     }
 
+    speechRef.current = window.speechSynthesis;
     return () => {
       speechRef.current?.speaking && speechRef.current.cancel();
       recognitionRef.current?.stop();
-      clearTimeout(toastTimeoutRef.current);
-      clearTimeout(timerRef.current);
     };
   }, [jobTitle, interviewComplete, navigate]);
 
   // Read question aloud
   useEffect(() => {
     if (currentQuestion && !isLoading) {
-      const u = new SpeechSynthesisUtterance(currentQuestion);
-      u.rate = 1.0; u.pitch = 1.0;
-      u.onstart = () => setIsReading(true);
-      u.onend   = () => setIsReading(false);
-      u.onerror = () => setIsReading(false);
-      speechRef.current.speak(u);
+      const utter = new SpeechSynthesisUtterance(currentQuestion);
+      utter.rate = 1.0; utter.pitch = 1.0;
+      utter.onstart = () => setIsReading(true);
+      utter.onend   = () => setIsReading(false);
+      utter.onerror = () => setIsReading(false);
+      speechRef.current.speak(utter);
     }
   }, [currentQuestion, isLoading]);
 
@@ -883,25 +648,6 @@ export default function Interview() {
     return () => clearTimeout(timerRef.current);
   }, [isRecording, timeLeft]);
 
-  // Toast on each new warning
-  useEffect(() => {
-    if (warnings > prevWarnRef.current) {
-      // show toast
-      setToast(`Warning: ${lastReason}`);
-      // beep
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1000, ctx.currentTime);
-      osc.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + 0.2);
-      // hide after 3s
-      clearTimeout(toastTimeoutRef.current);
-      toastTimeoutRef.current = setTimeout(() => setToast(''), 3000);
-    }
-    prevWarnRef.current = warnings;
-  }, [warnings, lastReason]);
-
   // Full-screen stop overlay
   if (testStopped) {
     return (
@@ -913,39 +659,43 @@ export default function Interview() {
     );
   }
 
-  // Loading
+  // Loading state
   if (isLoading || !currentQuestion) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4" />
-        <p className="text-lg text-gray-600">Preparing your interview…</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+        <p className="text-lg text-gray-600">Preparing your interview...</p>
       </div>
     );
   }
 
-  // Start voice recording
+  // Recording handlers
   const handleStartRecording = () => {
     setIsRecording(true);
     setTimeLeft(60);
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return console.error('SpeechRecognition not supported');
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) return console.error('SpeechRecognition not supported');
 
-    recognitionRef.current = new SR();
+    recognitionRef.current = new SpeechRec();
     recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
+
     recognitionRef.current.onresult = (e) => {
       let interim = '', final = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
-        e.results[i].isFinal ? (final += t) : (interim += t);
+        if (e.results[i].isFinal) final += t;
+        else interim += t;
       }
-      setAnswer(final || interim);
+      const txt = final || interim;
+      setAnswer(txt);
     };
-    recognitionRef.current.onend = () => isRecording && recognitionRef.current.start();
+    recognitionRef.current.onend = () => {
+      isRecording && recognitionRef.current.start();
+    };
     recognitionRef.current.start();
   };
 
-  // Submit answer
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!answer.trim()) return;
@@ -953,6 +703,7 @@ export default function Interview() {
     setAnswer('');
   };
 
+  // Format mm:ss
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60), s = secs % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -960,31 +711,21 @@ export default function Interview() {
 
   return (
     <>
-      {/* Toast banner */}
-      {toast && (
+      {/* Visual banner alert */}
+      {visualAlert && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2
                         bg-red-600 text-white px-4 py-2 rounded shadow-lg
                         z-50 animate-pulse">
-          {toast}
+          Warning: {visualAlert}
         </div>
       )}
 
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Camera feed */}
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Proctor Camera</h2>
-          <img
-            src={`${API_BASE_URL}/video_feed`}
-            alt="Proctor stream"
-            className="w-full max-w-md mx-auto rounded border"
-          />
-        </div>
-
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{jobTitle} Interview</h1>
           <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
-            Q {currentQuestionNumber} / 5
+            Q {currentQuestionNumber} of 5
           </span>
         </div>
 
@@ -1001,9 +742,9 @@ export default function Interview() {
           <div className="ml-8">
             <p className="text-lg font-medium">{currentQuestion}</p>
             <button
-              onClick={() => speechRef.current.speak(new SpeechSynthesisUtterance(currentQuestion))}
+              onClick={() => speechRef.current?.speak(new SpeechSynthesisUtterance(currentQuestion))}
               disabled={isReading}
-              className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+              className="mt-2 text-sm flex items-center text-indigo-600 hover:text-indigo-800"
             >
               {isReading ? 'Speaking…' : 'Read Aloud'}
             </button>
@@ -1014,7 +755,7 @@ export default function Interview() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
             rows={4}
-            className="w-full border p-3 rounded focus:ring-2 focus:ring-indigo-500"
+            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500"
             placeholder="Type your answer or use the mic…"
             value={answer}
             onChange={e => setAnswer(e.target.value)}
@@ -1022,16 +763,13 @@ export default function Interview() {
           />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Mic */}
             <div className="flex items-center space-x-4">
               {isMicAvailable && (
                 <button
                   type="button"
-                  onClick={isRecording
-                    ? () => { setIsRecording(false); recognitionRef.current?.stop(); }
-                    : handleStartRecording}
+                  onClick={() => setIsRecording(!isRecording) || (isRecording ? recognitionRef.current?.stop() : handleStartRecording())}
                   disabled={isLoading}
-                  className={`px-4 py-2 rounded ${
+                  className={`px-4 py-2 rounded-lg ${
                     isRecording ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800'
                   }`}
                 >
@@ -1039,15 +777,14 @@ export default function Interview() {
                 </button>
               )}
               {isMicAvailable === false && (
-                <p className="text-sm text-red-600">Microphone required</p>
+                <p className="text-sm text-red-600">Microphone access required</p>
               )}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isLoading || !answer.trim()}
-              className="bg-indigo-600 text-white py-2 px-6 rounded disabled:opacity-50"
+              className="bg-indigo-600 text-white py-2 px-6 rounded-lg disabled:opacity-50"
             >
               {isLoading ? 'Processing…' : 'Submit Answer'}
             </button>
@@ -1064,3 +801,268 @@ export default function Interview() {
     </>
   );
 }
+
+
+// With Camera Feed and Alerts
+
+// import React, { useState, useEffect, useRef } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { useInterview } from '../context/InterviewContext';
+
+// const API_BASE_URL = 'http://127.0.0.1:8080';
+
+// export default function Interview() {
+//   const {
+//     jobTitle,
+//     currentQuestion,
+//     currentQuestionNumber,
+//     isLoading,
+//     interviewComplete,
+//     submitAnswer,
+//     error,
+//     warnings,
+//     lastReason,
+//     testStopped
+//   } = useInterview();
+
+//   // Local UI state
+//   const [answer, setAnswer]           = useState('');
+//   const [isRecording, setIsRecording] = useState(false);
+//   const [timeLeft, setTimeLeft]       = useState(60);
+//   const [isMicAvailable, setIsMicAvailable] = useState(null);
+//   const [isReading, setIsReading]     = useState(false);
+//   const [toast, setToast]             = useState('');
+//   const prevWarnRef                   = useRef(0);
+//   const toastTimeoutRef               = useRef(null);
+
+//   // Refs
+//   const navigate       = useNavigate();
+//   const speechRef      = useRef(window.speechSynthesis);
+//   const recognitionRef = useRef(null);
+//   const timerRef       = useRef(null);
+
+//   // Redirect & mic‐check
+//   useEffect(() => {
+//     if (!jobTitle) navigate('/');
+//     if (interviewComplete) navigate('/results');
+
+//     if (navigator.mediaDevices?.getUserMedia) {
+//       navigator.mediaDevices.getUserMedia({ audio: true })
+//         .then(() => setIsMicAvailable(true))
+//         .catch(() => setIsMicAvailable(false));
+//     } else {
+//       setIsMicAvailable(false);
+//     }
+
+//     return () => {
+//       speechRef.current?.speaking && speechRef.current.cancel();
+//       recognitionRef.current?.stop();
+//       clearTimeout(toastTimeoutRef.current);
+//       clearTimeout(timerRef.current);
+//     };
+//   }, [jobTitle, interviewComplete, navigate]);
+
+//   // Read question aloud
+//   useEffect(() => {
+//     if (currentQuestion && !isLoading) {
+//       const u = new SpeechSynthesisUtterance(currentQuestion);
+//       u.rate = 1.0; u.pitch = 1.0;
+//       u.onstart = () => setIsReading(true);
+//       u.onend   = () => setIsReading(false);
+//       u.onerror = () => setIsReading(false);
+//       speechRef.current.speak(u);
+//     }
+//   }, [currentQuestion, isLoading]);
+
+//   // Recording timer
+//   useEffect(() => {
+//     if (isRecording && timeLeft > 0) {
+//       timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+//     } else if (isRecording && timeLeft === 0) {
+//       setIsRecording(false);
+//       recognitionRef.current?.stop();
+//     }
+//     return () => clearTimeout(timerRef.current);
+//   }, [isRecording, timeLeft]);
+
+//   // Toast on each new warning
+//   useEffect(() => {
+//     if (warnings > prevWarnRef.current) {
+//       // show toast
+//       setToast(`Warning: ${lastReason}`);
+//       // beep
+//       const ctx = new AudioContext();
+//       const osc = ctx.createOscillator();
+//       osc.type = 'sine';
+//       osc.frequency.setValueAtTime(1000, ctx.currentTime);
+//       osc.connect(ctx.destination);
+//       osc.start(); osc.stop(ctx.currentTime + 0.2);
+//       // hide after 3s
+//       clearTimeout(toastTimeoutRef.current);
+//       toastTimeoutRef.current = setTimeout(() => setToast(''), 3000);
+//     }
+//     prevWarnRef.current = warnings;
+//   }, [warnings, lastReason]);
+
+//   // Full-screen stop overlay
+//   if (testStopped) {
+//     return (
+//       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+//         <h2 className="text-3xl font-bold text-red-600">
+//           Test stopped after 5 warnings
+//         </h2>
+//       </div>
+//     );
+//   }
+
+//   // Loading
+//   if (isLoading || !currentQuestion) {
+//     return (
+//       <div className="flex flex-col items-center justify-center h-64">
+//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4" />
+//         <p className="text-lg text-gray-600">Preparing your interview…</p>
+//       </div>
+//     );
+//   }
+
+//   // Start voice recording
+//   const handleStartRecording = () => {
+//     setIsRecording(true);
+//     setTimeLeft(60);
+//     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+//     if (!SR) return console.error('SpeechRecognition not supported');
+
+//     recognitionRef.current = new SR();
+//     recognitionRef.current.continuous = true;
+//     recognitionRef.current.interimResults = true;
+//     recognitionRef.current.onresult = (e) => {
+//       let interim = '', final = '';
+//       for (let i = e.resultIndex; i < e.results.length; i++) {
+//         const t = e.results[i][0].transcript;
+//         e.results[i].isFinal ? (final += t) : (interim += t);
+//       }
+//       setAnswer(final || interim);
+//     };
+//     recognitionRef.current.onend = () => isRecording && recognitionRef.current.start();
+//     recognitionRef.current.start();
+//   };
+
+//   // Submit answer
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     if (!answer.trim()) return;
+//     submitAnswer(answer);
+//     setAnswer('');
+//   };
+
+//   const formatTime = (secs) => {
+//     const m = Math.floor(secs / 60), s = secs % 60;
+//     return `${m}:${s < 10 ? '0' : ''}${s}`;
+//   };
+
+//   return (
+//     <>
+//       {/* Toast banner */}
+//       {toast && (
+//         <div className="fixed top-4 left-1/2 transform -translate-x-1/2
+//                         bg-red-600 text-white px-4 py-2 rounded shadow-lg
+//                         z-50 animate-pulse">
+//           {toast}
+//         </div>
+//       )}
+
+//       <div className="max-w-4xl mx-auto space-y-6">
+//         {/* Camera feed */}
+//         <div>
+//           <h2 className="text-xl font-semibold mb-2">Proctor Camera</h2>
+//           <img
+//             src={`${API_BASE_URL}/video_feed`}
+//             alt="Proctor stream"
+//             className="w-full max-w-md mx-auto rounded border"
+//           />
+//         </div>
+
+//         {/* Header */}
+//         <div className="flex justify-between items-center">
+//           <h1 className="text-2xl font-bold">{jobTitle} Interview</h1>
+//           <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
+//             Q {currentQuestionNumber} / 5
+//           </span>
+//         </div>
+
+//         {/* Question Box */}
+//         <div className="bg-indigo-50 p-6 rounded-lg relative">
+//           <div className="absolute top-4 left-4 bg-indigo-600 text-white p-1 rounded-full">
+//             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+//               <path fillRule="evenodd"
+//                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+//                 clipRule="evenodd"
+//               />
+//             </svg>
+//           </div>
+//           <div className="ml-8">
+//             <p className="text-lg font-medium">{currentQuestion}</p>
+//             <button
+//               onClick={() => speechRef.current.speak(new SpeechSynthesisUtterance(currentQuestion))}
+//               disabled={isReading}
+//               className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+//             >
+//               {isReading ? 'Speaking…' : 'Read Aloud'}
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Answer Form */}
+//         <form onSubmit={handleSubmit} className="space-y-4">
+//           <textarea
+//             rows={4}
+//             className="w-full border p-3 rounded focus:ring-2 focus:ring-indigo-500"
+//             placeholder="Type your answer or use the mic…"
+//             value={answer}
+//             onChange={e => setAnswer(e.target.value)}
+//             disabled={isLoading}
+//           />
+
+//           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+//             {/* Mic */}
+//             <div className="flex items-center space-x-4">
+//               {isMicAvailable && (
+//                 <button
+//                   type="button"
+//                   onClick={isRecording
+//                     ? () => { setIsRecording(false); recognitionRef.current?.stop(); }
+//                     : handleStartRecording}
+//                   disabled={isLoading}
+//                   className={`px-4 py-2 rounded ${
+//                     isRecording ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800'
+//                   }`}
+//                 >
+//                   {isRecording ? `Stop (${formatTime(timeLeft)})` : 'Record'}
+//                 </button>
+//               )}
+//               {isMicAvailable === false && (
+//                 <p className="text-sm text-red-600">Microphone required</p>
+//               )}
+//             </div>
+
+//             {/* Submit */}
+//             <button
+//               type="submit"
+//               disabled={isLoading || !answer.trim()}
+//               className="bg-indigo-600 text-white py-2 px-6 rounded disabled:opacity-50"
+//             >
+//               {isLoading ? 'Processing…' : 'Submit Answer'}
+//             </button>
+//           </div>
+
+//           {error && <p className="text-red-600">{error}</p>}
+//         </form>
+
+//         {/* Warnings Counter */}
+//         <p className="text-red-600 font-semibold">
+//           Warnings: {warnings} / 5
+//         </p>
+//       </div>
+//     </>
+//   );
+// }
