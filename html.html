@@ -1,0 +1,87 @@
+<section class="value-section">
+
+    <div class="value-grid">
+      <div class="value-item">
+        <img src="https://img.icons8.com/ios/50/truck-weight-max-loading.png" alt="Shipping & Returns">
+        <p>Shipping & Returns</p>
+      </div>
+      <div class="value-item">
+        <img src="https://cdn.shopify.com/s/files/1/0262/5368/8913/files/Group_1000009713.png?v=1744465639" alt="Eco-Friendly">
+        <p>Eco-Friendly</p>
+      </div>
+      <div class="value-item">
+        <img src="https://img.icons8.com/ios/100/butterfly.png" alt="Happiness Guarantee">
+        <p>Happiness Guarantee</p>
+      </div>
+      <div class="value-item">
+        <img src="https://cdn.shopify.com/s/files/1/0262/5368/8913/files/Waste_48b1a482-3bca-4911-bf79-d19c928ff5f4.png?v=1744465753" alt="Waste Reduction">
+        <p>Waste Reduction</p>
+      </div>
+    </div>
+  </section>
+  
+  <style>
+  .value-section {
+    text-align: center;
+    font-family: 'Helvetica Neue', sans-serif;
+  }
+  
+  .value-section h2 {
+    color: #0c1b3c;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 30px;
+  }
+  
+  .value-grid {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 30px 0;
+    background-color: #f5f5f5;
+  }
+  
+  .value-item {
+    flex: 1 1 200px;
+    min-width: 180px;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+  }
+  
+  .value-item:last-child {
+    border-right: none;
+  }
+  
+  .value-item img {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 15px;
+  }
+  
+  .value-item p {
+    font-size: 16px;
+    font-weight: 500;
+    color: #111;
+    margin: 0;
+  }
+  
+  /* Responsive for small screens */
+  @media (max-width: 768px) {
+    .value-grid {
+      flex-direction: column;
+      border-top: none;
+      border-bottom: none;
+    }
+  
+    .value-item {
+      border-right: none;
+      border-bottom: 1px solid #ccc;
+    }
+  
+    .value-item:last-child {
+      border-bottom: none;
+    }
+  }
+  </style>
