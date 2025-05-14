@@ -379,13 +379,6 @@ export default function Interview() {
                 </div>
               </div>
             )}
-            
-            {/* Persistent warning indicator */}
-            {localLastReason && !showWarningOverlay && (
-              <div className="absolute bottom-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg opacity-90">
-                {localLastReason}
-              </div>
-            )}
           </div>
         </div>
 
